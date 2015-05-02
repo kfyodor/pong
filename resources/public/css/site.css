@@ -1,0 +1,64 @@
+body {
+  font-family: Courier New, monospace;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-top: 72px;
+  -webkit-font-smoothing: antialiased;
+  font-size: 1.125em;
+  color: #333;
+  line-height: 1.5em;
+  color: #666;
+}
+
+h1 {
+  font-size: 1.9em;
+  font-weight: normal;
+  text-align: center;
+}
+
+h2 {
+  font-size: 2em
+}
+
+h3 {
+  font-size: 1.5em
+}
+
+a {
+  text-decoration: none;
+  color: #09f;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+#board {
+  position: relative;
+  background: #000;
+  margin: 0 auto;
+  margin-top: 20%;
+}
+
+#ball {
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  background: white;
+}
+
+.controls {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.controls a {
+  color: #666;
+  cursor: pointer;
+  transition: color ease-in-out 0.1s;
+  text-decoration: none;
+}
+
+.controls a:hover {
+  color: #ff2200;
+}
