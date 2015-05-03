@@ -1,57 +1,72 @@
 (ns pong.ball
-  (:require [reagent.core :as reagent :refer [atom]]
+  (:require [reagent.core :as reagent :refer [atom cursor]]
             [pong.config :as c]))
 
 (def position
-  (atom {:y (/ (:board-height c/dims) 2)
-         :x (/ (:board-width  c/dims) 2)}))
+  (atom {:y {:pos (/ (:board-height c/dims) 2) :speed 0}
+         :x {:pos (/ (:board-width  c/dims) 2)} :speed 0}))
 
-(def speed
-  (clojure.core/atom {:x 0
-                      :y 0}))
-
-(def base-speed 15)
+(def base-speed 30)
 (def sqrt (.-sqrt js/Math))
 
-(defn mirror!
-  "Change velocity's sign"
-  [key]
-  (swap! speed update key -))
+(def speed-x (cursor position [:x :speed]))
+(def speed-y (cursor position [:y :speed]))
 
-(defn init-speed!
+(def pos-x   (cursor position [:x :pos]))
+(def pos-y   (cursor position [:y :pos]))
+
+(defn- speed-x->y
+  [speed-x base-speed]
+  (int
+   (sqrt (- (* base-speed 2)
+            (* speed-x speed-x)))))
+
+(defn- init-speed!
   "Init random x- and y- components:
    2*base-speed^2 = speed-x^2 + speed-y^2"
   []
   (let [sign (fn [] (rand-nth [-1 1]))
-        x (* (sign) (rand base-speed))
-        y (* (sign) (sqrt (- (* base-speed 2) (* x x))))]
-    (reset! speed {:x x :y y})))
+        x (* (sign) (rand-int (/ base-speed 2)))
+        y (* (sign) (speed-x->y x base-speed))]
+    (reset! speed-x x)
+    (reset! speed-y y)))
 
 (init-speed!) ;; TODO: get rid of this
 
-(defn delta
-  "Calculate dx or dy. c-key could be :x or :y"
-  [c-key binding]
-  (let [pos (c-key @position)
-        speed (c-key @speed)
-        new-pos (+ pos speed)
-        left (+ new-pos (:ball-size c/dims))]
-    (when (or (<= new-pos 0) (>= left binding))
-      (mirror! c-key))
-    speed))
+(defn collisions [{:keys [:pos :speed] :as p} lborder rborder] ""
+  (let [rpred (if rborder (>= pos rborder) false)
+        lpred (if lborder (<= pos lborder) false)]
+    (if (or lpred rpred) {:pos pos :speed (- speed)} p)))
+
+(defn fail? [{:keys [:pos :speed] :as p}]
+  (if (< pos 0) {:pos 0 :speed 0} p))
+
+(defn new-pos
+  [{:keys [:pos :speed] :as p}]
+  (update p :pos #(+ speed pos)))
 
 (defn move!
   "Move ball."
   []
-  (let [{:keys [:board-width :board-height]} c/dims
-        dx (delta :x board-width)
-        dy (delta :y board-height)]
-    (swap! position update :x (fn [i] (+ dx i)))
-    (swap! position update :y (fn [i] (+ dy i)))))
+  (let [{:keys [:board-width :board-height :ball-size]} c/dims
+        pos-x (:x @position)
+        pos-y (:y @position)
+        new-x (-> pos-x
+                  (collisions 0 (- board-width ball-size))
+                  (fail?)
+                  (new-pos))
+        new-y (-> pos-y
+                  (collisions 0 (- board-height ball-size))
+                  (new-pos))]
+    (if (or (= (:speed new-x) 0) (= (:speed new-y) 0))
+      (js/console.log "Fail!")
+      (do
+  ;;      (js/console.log (clj->js new-x))
+        (swap! position assoc :x new-x)
+        (swap! position assoc :y new-y)))))
 
 (defn ball
   "Ball's React component"
   []
-  (let [y (@position :y)
-        x (@position :x)]
-    [:div#ball {:style {:top y :left x}}]))
+  [:div#ball {:style {:top @pos-y
+                      :left @pos-x}}])

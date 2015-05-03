@@ -15,7 +15,7 @@
       (swap! game-state
              assoc
              :running
-             (js/setInterval b/move! 17)))))
+             (js/setInterval b/move! (int (/ 1000 60)))))))
 
 (defn pause!
   []
@@ -24,6 +24,7 @@
     (swap! game-state assoc :running false)))
 
 (defn controls
+  "Start/stop button's React component."
   []
   (let [running (game-running?)
         caption (if running "Pause!" "Start!")
